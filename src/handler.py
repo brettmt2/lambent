@@ -9,23 +9,23 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
         super().__init__()
         self.start: int = start
         self.end: int = end
-        self.start_stmt_expr: ast.stmt | ast.expr = None
-        self.end_stmt_expr: ast.stmt | ast.expr = None
+        self.start_stmt: ast.stmt = None
+        self.end_stmt: ast.stmt = None
         self.func: Callable = func
 
     def generic_visit(self, node):
-        if isinstance(node, ast.expr) or isinstance(node, ast.stmt):
-            if node.lineno == self.start:
-                self.start_stmt_expr = node
-            elif node.lineno == self.end:
-                self.end_stmt_expr = node
+        if isinstance(node, ast.stmt):
+            if node.lineno == self.start and self.start_stmt is None:
+                self.start_stmt = node
+            elif node.lineno == self.end and self.end_stmt is None:
+                self.end_stmt = node
         return super().generic_visit(node)
     
     def _get_ast_nodes(self):
-        if self.start_stmt_expr is None:
+        if self.start_stmt is None:
             raise LambentLineDetectionError(f"Start line index out of range for {self.func.__name__}.")
-        if self.end_stmt_expr is None:
-            raise LambentLineDetectionError(f"Start line index out of range for {self.func.__name__}.")
+        if self.end_stmt is None:
+            raise LambentLineDetectionError(f"End line index out of range for {self.func.__name__}.")
 
 @dataclass
 class Handler:
