@@ -4,12 +4,13 @@ import functools
 import ast
 
 class LineDetectionNodeVisitor(ast.NodeVisitor):
-    def __init__(self, start, end):
+    def __init__(self, start, end, func):
         super().__init__()
         self.start: int = start
         self.end: int = end
         self.start_stmt_expr: ast.stmt | ast.expr = None
         self.end_stmt_expr: ast.stmt | ast.expr = None
+        self.func: Callable = func
 
     def generic_visit(self, node):
         if isinstance(node, ast.expr) or isinstance(node, ast.stmt):
@@ -18,7 +19,12 @@ class LineDetectionNodeVisitor(ast.NodeVisitor):
             elif node.lineno == self.end:
                 self.end_stmt_expr = node
         return super().generic_visit(node)
-
+    
+    def _get_ast_nodes(self):
+        if self.start_stmt_expr is None:
+            raise IndexError(f"Start line index out of range for {self.func.__name__}.")
+        if not self.end_stmt_expr is None:
+            raise IndexError(f"End line index out of range for {self.func.__name__}.")
 
 @dataclass
 class Handler:
