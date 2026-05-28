@@ -2,8 +2,9 @@ from dataclasses import dataclass
 from typing import Callable
 import functools
 import ast
+from errors import LambentLineDetectionError
 
-class LineDetectionNodeVisitor(ast.NodeVisitor):
+class LineValidatorNodeVisitor(ast.NodeVisitor):
     def __init__(self, start, end, func):
         super().__init__()
         self.start: int = start
@@ -22,9 +23,9 @@ class LineDetectionNodeVisitor(ast.NodeVisitor):
     
     def _get_ast_nodes(self):
         if self.start_stmt_expr is None:
-            raise IndexError(f"Start line index out of range for {self.func.__name__}.")
-        if not self.end_stmt_expr is None:
-            raise IndexError(f"End line index out of range for {self.func.__name__}.")
+            raise LambentLineDetectionError(f"Start line index out of range for {self.func.__name__}.")
+        if self.end_stmt_expr is None:
+            raise LambentLineDetectionError(f"Start line index out of range for {self.func.__name__}.")
 
 @dataclass
 class Handler:

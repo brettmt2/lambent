@@ -1,0 +1,2 @@
+class LambentLineDetectionError(IndexError):
+    pass
