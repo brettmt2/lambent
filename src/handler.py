@@ -3,39 +3,49 @@ from typing import Callable
 import functools
 import ast
 from errors import LambentLineDetectionError
+import inspect
 
 class LineValidatorNodeVisitor(ast.NodeVisitor):
     def __init__(self, start, end, func):
+        if end < start:
+            raise LambentLineDetectionError("End line must be >= start.")
+        if start < 2:
+            raise LambentLineDetectionError("Start line must come after function definition.")
+        
         super().__init__()
         self.start: int = start
         self.end: int = end
         self.start_stmt: ast.stmt = None
         self.end_stmt: ast.stmt = None
         self.func: Callable = func
+        self.function_def_node: ast.FunctionDef = None
 
-    def generic_visit(self, node):
+        source = inspect.getsource(func)
+        self.tree = ast.parse(source)
+        self._validate()
+
+    def generic_visit(self, node: ast.AST):
+        if self.function_def_node is None and isinstance(node, ast.FunctionDef):
+            self.function_def_node = node
+
         if isinstance(node, ast.stmt):
-            if node.lineno == self.start and self.start_stmt is None:
+            if node.lineno == self.start:
                 self.start_stmt = node
-            elif node.lineno == self.end and self.end_stmt is None:
+            
+            if node.lineno == self.end:
                 self.end_stmt = node
+                
         return super().generic_visit(node)
     
-    def _lineno_input_validate(self):
+    def _stmt_function_index_validation(self):
         if self.start_stmt is None:
-            raise LambentLineDetectionError(f"Start line index out of range for {self.func.__name__}.")
+            raise LambentLineDetectionError(f"Starting lineno input {self.start} is not in range of function {self.func.__name__} ({self.function_def_node.end_lineno} lines).")
         if self.end_stmt is None:
-            raise LambentLineDetectionError(f"End line index out of range for {self.func.__name__}.")
-        if self.start > self.end:
-            raise LambentLineDetectionError(f"Start line is greater than end line for {self.func.__name__}.")
-
-    # validate that both line end is within indent of line start
-    def _lineno_instance_validate(self):
-        if isinstance(self.start_stmt, ast.If):
-            if self.end_stmt.col_offset != self.start_stmt.col_offset:
-                raise LambentLineDetectionError(f"End line input is not within start line block")
-            if self.end_stmt.lineno <= self.start_stmt.end_lineno:
-                raise LambentLineDetectionError(f"End line number must be after block statement")
+            raise LambentLineDetectionError(f"Ending lineno input {self.end} is not in range of function {self.func.__name__} ({self.function_def_node.end_lineno} lines).")   
+    
+    def _validate(self):
+        self.visit(self.tree)
+        self._stmt_function_index_validation()
 
 @dataclass
 class Handler:
