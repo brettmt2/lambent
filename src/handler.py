@@ -43,9 +43,17 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
         if self.end_stmt is None:
             raise LambentLineDetectionError(f"Ending lineno input {self.end} is not in range of function {self.func.__name__} ({self.function_def_node.end_lineno} lines).")   
     
+    def _stmt_indentation_validation(self):
+        s_col = self.start_stmt.col_offset
+        e_col = self.end_stmt.col_offset
+
+        if s_col != e_col:
+            raise LambentLineDetectionError(f"Statements are not on the same indentation level: {s_col}, {e_col}.")
+        
     def _validate(self):
         self.visit(self.tree)
         self._stmt_function_index_validation()
+        self._stmt_indentation_validation()
 
 @dataclass
 class Handler:
