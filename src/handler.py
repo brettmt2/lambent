@@ -21,11 +21,17 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
                 self.end_stmt = node
         return super().generic_visit(node)
     
-    def _get_ast_nodes(self):
+    def _lineno_input_validate(self):
         if self.start_stmt is None:
             raise LambentLineDetectionError(f"Start line index out of range for {self.func.__name__}.")
         if self.end_stmt is None:
             raise LambentLineDetectionError(f"End line index out of range for {self.func.__name__}.")
+        if self.start > self.end:
+            raise LambentLineDetectionError(f"Start line is greater than end line for {self.func.__name__}.")
+
+    # validate that both line end is within indent of line start
+    def _lineno_instance_validate(self):
+        pass
 
 @dataclass
 class Handler:
