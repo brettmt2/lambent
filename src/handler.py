@@ -31,7 +31,11 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
 
     # validate that both line end is within indent of line start
     def _lineno_instance_validate(self):
-        pass
+        if isinstance(self.start_stmt, ast.If):
+            if self.end_stmt.col_offset != self.start_stmt.col_offset:
+                raise LambentLineDetectionError(f"End line input is not within start line block")
+            if self.end_stmt.lineno <= self.start_stmt.end_lineno:
+                raise LambentLineDetectionError(f"End line number must be after block statement")
 
 @dataclass
 class Handler:
