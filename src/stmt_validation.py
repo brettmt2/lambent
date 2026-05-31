@@ -49,7 +49,14 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
         if s_col != e_col:
             raise LambentLineDetectionError(f"Statements are not on the same indentation level: {s_col}, {e_col}.")
         
+    def _stmt_block_validation(self):
+        block_stmts = (ast.If, ast.While, ast.For, ast.Try, ast.With, ast.FunctionDef, ast.ClassDef)
+        # end statement must be a non block statement
+        if isinstance(self.end_stmt, block_stmts):
+            raise LambentLineDetectionError(f"End statement cannot be a block statement: (ast.If, ast.While, ast.For, ast.Try, ast.With, ast.FunctionDef, ast.ClassDef).")
+
     def _validate(self):
         self.visit(self.tree)
-        self._stmt_function_index_validation()
-        self._stmt_indentation_validation()
+        self._stmt_function_index_validation() # assumes start < end and start < 2
+        self._stmt_indentation_validation() # assumes start and end stmts exist
+        self._stmt_block_validation() # assumes start and end stmts have same col offset
