@@ -22,7 +22,6 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
         source = inspect.getsource(func)
         self.tree = ast.parse(source)
         self._validate()
-
         
     def _print_debug(self):
         print(f"start_stmt: {ast.unparse(self.start_stmt)}")
@@ -37,10 +36,10 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
             child._parent = node
 
         if isinstance(node, ast.stmt):
-            if node.lineno == self.start:
+            if node.lineno == self.start and self.start_stmt is None:
                 self.start_stmt = node
-            
-            if node.lineno == self.end:
+
+            if node.lineno == self.end and self.end_stmt is None:
                 self.end_stmt = node
                 
         return super().generic_visit(node)
@@ -78,3 +77,5 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
         self._stmt_indentation_validation() # assumes start and end stmts exist
         self._stmt_block_validation() # assumes start and end stmts have same col offset
         self._stmt_parent_block_validation()  # assumes end_stmt is not a block statement
+        
+        return self.function_def_node, self.start_stmt, self.end_stmt
