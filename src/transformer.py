@@ -9,7 +9,17 @@ class ParentBodyNodeTransformer(ast.NodeTransformer):
         self.start_idx = node.body.index(start_stmt)
         self.end_idx = node.body.index(end_stmt)
         self.slice = node.body[self.start_idx:self.end_idx + 1]
-        self.exceptions = exceptions
+
+        self.exceptions = []
+        
+        for e in exceptions:
+            self.exceptions.append(ast.Name(id=str(e.__name__), ctx=ast.Load()))
+
+        if len(self.exceptions) == 1:
+            self.exc_type = self.exceptions[0]
+        else:
+            self.exc_type = ast.Tuple(elts=self.exceptions, ctx=ast.Load())
+        
 
         source = inspect.getsource(on_error)
         func_def = ast.parse(source).body[0]
@@ -20,7 +30,7 @@ class ParentBodyNodeTransformer(ast.NodeTransformer):
             body=self.slice,
             handlers=[
                 ast.ExceptHandler(
-                    type=ast.Name(id='Exception', ctx=ast.Load()),
+                    type=self.exc_type,
                     name='e',
                     body=self.handler_body
                 )
