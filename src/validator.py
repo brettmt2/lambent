@@ -72,6 +72,10 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
 
     def _validate(self):
         self.visit(self.tree)
+        offset = self.function_def_node.lineno - 1
+        self.start += offset
+        self.end += offset
+        
         self._stmt_function_index_validation() # assumes start < end and start < 2
         self._stmt_indentation_validation() # assumes start and end stmts exist
         self._stmt_block_validation() # assumes start and end stmts have same col offset
