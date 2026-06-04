@@ -21,7 +21,6 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
 
         source = inspect.getsource(func)
         self.tree = ast.parse(source)
-        self._validate()
         
     def _print_debug(self):
         print(f"start_stmt: {ast.unparse(self.start_stmt)}")
