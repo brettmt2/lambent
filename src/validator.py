@@ -82,3 +82,16 @@ class LineValidatorNodeVisitor(ast.NodeVisitor):
         self._stmt_parent_block_validation()  # assumes end_stmt is not a block statement
         
         return self.function_def_node, self.start_stmt, self.end_stmt
+    
+class StringValidatorNodeVisitor(ast.NodeVisitor):
+    def __init__(self, start_str, end_str, func):
+        super().__init__()
+        self.start_stmt_unparsed: str = start_str
+        self.end_stmt_unparsed: str = end_str
+        self.start_stmt: ast.stmt = None
+        self.end_stmt: ast.stmt = None
+        self.func: Callable = func
+        self.function_def_node: ast.FunctionDef = None
+
+        source = inspect.getsource(func)
+        self.tree = ast.parse(source)
