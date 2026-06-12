@@ -95,3 +95,42 @@ class StringValidatorNodeVisitor(ast.NodeVisitor):
 
         source = inspect.getsource(func)
         self.tree = ast.parse(source)
+
+    def _print_debug(self):
+        print(f"start_stmt: {ast.unparse(self.start_stmt)}")
+        print(f"end_stmt: {ast.unparse(self.end_stmt)}")
+        print(f"function_def_node: {ast.unparse(self.function_def_node)}")
+
+    def generic_visit(self, node: ast.AST):
+        if self.function_def_node is None and isinstance(node, ast.FunctionDef):
+            self.function_def_node = node
+
+        for child in ast.iter_child_nodes(node):
+            child._parent = node
+
+        if isinstance(node, ast.stmt):
+            if ast.unparse(node) == self.start_stmt_unparsed and self.start_stmt is None:
+                self.start_stmt = node
+                self.start_stmt_lineno = node.lineno
+
+            if ast.unparse(node) == self.end_stmt_unparsed and self.end_stmt is None:
+                self.end_stmt = node
+                self.end_stmt_lineno = node.lineno
+                
+        return super().generic_visit(node)
+    
+    def _stmt_function_index_validation(self):
+        if self.start_stmt is None:
+            raise LambentLineDetectionError(f"Starting statement input '{self.start_stmt_unparsed}' is not found in function {self.func.__name__}.")
+        if self.end_stmt is None:
+            raise LambentLineDetectionError(f"Ending statement input '{self.end_stmt_unparsed}' is not found in function {self.func.__name__}.")
+        
+    def _validate(self):
+        self.visit(self.tree)
+        self._stmt_function_index_validation()
+        print('successfully validated string inputs for the function')
+        # self._stmt_indentation_validation() # assumes start and end stmts exist
+        # self._stmt_block_validation() # assumes start and end stmts have same col offset
+        # self._stmt_parent_block_validation()  # assumes end_stmt is not a block statement
+        
+        # return self.function_def_node, self.start_stmt, self.end_stmt
