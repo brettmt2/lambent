@@ -92,6 +92,8 @@ class StringValidatorNodeVisitor(ast.NodeVisitor):
         self.end_stmt: ast.stmt = None
         self.func: Callable = func
         self.function_def_node: ast.FunctionDef = None
+        self.start_stmt_lineno: int = None
+        self.end_stmt_lineno: int = None
 
         source = inspect.getsource(func)
         self.tree = ast.parse(source)
@@ -125,12 +127,14 @@ class StringValidatorNodeVisitor(ast.NodeVisitor):
         if self.end_stmt is None:
             raise LambentLineDetectionError(f"Ending statement input '{self.end_stmt_unparsed}' is not found in function {self.func.__name__}.")
         
+    def _stmt_position_validation(self): # validates if start <= end
+        if self.end_stmt_lineno < self.start_stmt_lineno:
+            raise LambentLineDetectionError("End line must be >= start.")
+        if self.start_stmt_lineno < 2:
+            raise LambentLineDetectionError("Start line must come after function definition.")
+
     def _validate(self):
         self.visit(self.tree)
         self._stmt_function_index_validation()
+        self._stmt_position_validation() # assumes each statement was found and exists in function
         print('successfully validated string inputs for the function')
-        # self._stmt_indentation_validation() # assumes start and end stmts exist
-        # self._stmt_block_validation() # assumes start and end stmts have same col offset
-        # self._stmt_parent_block_validation()  # assumes end_stmt is not a block statement
-        
-        # return self.function_def_node, self.start_stmt, self.end_stmt
