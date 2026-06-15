@@ -140,9 +140,24 @@ class StringValidatorNodeVisitor(ast.NodeVisitor):
             self._print_debug()
             raise LambentLineDetectionError(f"End statement cannot be a block statement: (ast.If, ast.While, ast.For, ast.Try, ast.With, ast.FunctionDef, ast.ClassDef).")
 
+    def _stmt_indentation_validation(self):
+        s_col = self.start_stmt.col_offset
+        e_col = self.end_stmt.col_offset
+
+        if s_col != e_col:
+            raise LambentLineDetectionError(f"Statements are not on the same indentation level: {s_col}, {e_col}.")
+
+    def _stmt_parent_block_validation(self):
+        # two statements must be in the same block
+        if self.start_stmt._parent != self.end_stmt._parent:
+            self._print_debug()
+            raise LambentLineDetectionError("Statements must have the same parent.")
+
     def _validate(self):
         self.visit(self.tree)
         self._stmt_function_index_validation()
         self._stmt_position_validation() # assumes each statement was found and exists in function
         self._stmt_block_validation() # assumes start <= end
+        self._stmt_indentation_validation()
+        self._stmt_parent_block_validation() # assumes stmts are at the same offset
         print('successfully validated string inputs for the function')
