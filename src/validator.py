@@ -132,9 +132,17 @@ class StringValidatorNodeVisitor(ast.NodeVisitor):
             raise LambentLineDetectionError("End line must be >= start.")
         if self.start_stmt_lineno < 2:
             raise LambentLineDetectionError("Start line must come after function definition.")
+            
+    def _stmt_block_validation(self):
+        block_stmts = (ast.If, ast.While, ast.For, ast.Try, ast.With, ast.FunctionDef, ast.ClassDef)
+        # end statement must be a non block statement
+        if isinstance(self.end_stmt, block_stmts):
+            self._print_debug()
+            raise LambentLineDetectionError(f"End statement cannot be a block statement: (ast.If, ast.While, ast.For, ast.Try, ast.With, ast.FunctionDef, ast.ClassDef).")
 
     def _validate(self):
         self.visit(self.tree)
         self._stmt_function_index_validation()
         self._stmt_position_validation() # assumes each statement was found and exists in function
+        self._stmt_block_validation() # assumes start <= end
         print('successfully validated string inputs for the function')
